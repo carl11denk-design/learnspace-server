@@ -17,7 +17,9 @@ from datetime import datetime
 # Lokal: Port 8082 | Railway setzt PORT automatisch als Umgebungsvariable
 PORT = int(os.environ.get('PORT', 8082))
 DIRECTORY = os.path.dirname(os.path.abspath(__file__))
-TRANSPORT_API = 'https://v6.db.transport.rest'
+TRANSPORT_API_V6 = 'https://v6.db.transport.rest'
+TRANSPORT_API_V5 = 'https://v5.db.transport.rest'
+TRANSPORT_API    = TRANSPORT_API_V6  # Primär v6, Fallback auf v5
 
 
 # ── Dualis ────────────────────────────────────────────────────────────────────
@@ -144,8 +146,19 @@ def fetch_bahn_connections(origin, destination, results=6):
             raise ValueError(f'Bahnhof nicht gefunden: "{name}"')
         return data[0]['id'], data[0]['name']
 
-    from_id, from_name = lookup(origin)
-    to_id,   to_name   = lookup(destination)
+    # Fallback: v6 → v5 wenn v6 nicht verfügbar
+    global TRANSPORT_API
+    try:
+        from_id, from_name = lookup(origin)
+        to_id,   to_name   = lookup(destination)
+    except Exception as e:
+        if '503' in str(e) or '502' in str(e) or 'timed out' in str(e).lower():
+            print("  v6 API nicht verfügbar – wechsle zu v5...")
+            TRANSPORT_API = TRANSPORT_API_V5
+            from_id, from_name = lookup(origin)
+            to_id,   to_name   = lookup(destination)
+        else:
+            raise
 
     url = (f"{TRANSPORT_API}/journeys"
            f"?from={requests.utils.quote(from_id)}"

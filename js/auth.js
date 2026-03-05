@@ -1,6 +1,6 @@
 // js/auth.js — Google Sign-In für LearnSpace
 
-const CLIENT_ID   = '1075497087840-c5p8ie2hjqi52ejpjfb0r7fmm2aj24qp.apps.googleusercontent.com';
+const CLIENT_ID   = '1075497087840-g6fj2olui0p5r4if1otan841n6hs8j0q.apps.googleusercontent.com';
 const STORAGE_KEY = 'learnspace_user';
 
 // Beim Laden der Seite prüfen ob User schon eingeloggt ist

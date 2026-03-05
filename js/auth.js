@@ -12,6 +12,8 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const user = JSON.parse(stored);
             showApp(user);
+            // Cloud-Sync auch bei bereits eingeloggtem User starten!
+            connectToCloud(user.email);
         } catch {
             localStorage.removeItem(STORAGE_KEY);
             showLoginScreen();

@@ -1,5 +1,7 @@
 // js/auth.js — Google Sign-In für LearnSpace
 
+import { connectToCloud } from './cloud.js';
+
 const CLIENT_ID   = '1075497087840-g6fj2olui0p5r4if1otan841n6hs8j0q.apps.googleusercontent.com';
 const STORAGE_KEY = 'learnspace_user';
 
@@ -46,7 +48,7 @@ function showLoginScreen() {
     tryInit();
 }
 
-function handleCredential(response) {
+async function handleCredential(response) {
     // JWT-Payload dekodieren um Nutzerinfos zu erhalten
     const payload = JSON.parse(atob(response.credential.split('.')[1]));
     const user = {
@@ -56,6 +58,9 @@ function handleCredential(response) {
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(user));
     showApp(user);
+
+    // Mit Firebase verbinden und Daten aus Cloud laden
+    await connectToCloud(response.credential);
 }
 
 function showApp(user) {
@@ -85,6 +90,7 @@ function updateSidebarUser(user) {
 
 function logout() {
     localStorage.removeItem(STORAGE_KEY);
+    sessionStorage.removeItem('cloud_synced');
     if (typeof google !== 'undefined' && google.accounts && google.accounts.id) {
         google.accounts.id.disableAutoSelect();
     }

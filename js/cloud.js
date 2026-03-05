@@ -19,9 +19,14 @@
         'learnspace_kanban_v2',
         'learnspace_habits_v2',
         'learnspace_habit_logs_v2',
+        'learnspace_courses',
         'learnspace_ical_url',
         'learnspace_gemini_key',
-        'learnspace_dualis_email'
+        'learnspace_dualis_email',
+        'learnspace_dualis_password',
+        'learnspace_dualis_cache',
+        'learnspace_v2_setup',
+        'theme'
     ];
 
     var db = null;

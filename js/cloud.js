@@ -1,6 +1,6 @@
-// js/cloud.js — Firebase Firestore Cloud Sync (vereinfacht, kein Firebase Auth nötig)
+// js/cloud.js — Firebase Firestore Cloud Sync
 
-import { initializeApp }          from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js';
+import { initializeApp }             from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js';
 import { getFirestore, doc, getDoc, setDoc }
     from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
 
@@ -13,7 +13,6 @@ const FIREBASE_CONFIG = {
     appId:             "1:699822836714:web:49e51e2ce2b0e116ad4093"
 };
 
-// Welche Daten werden synchronisiert (Passwörter NIEMALS!)
 const SYNC_KEYS = [
     'learnspace_notes_v2',
     'learnspace_note_folders_v2',
@@ -25,17 +24,29 @@ const SYNC_KEYS = [
     'learnspace_dualis_email',
 ];
 
-const app = initializeApp(FIREBASE_CONFIG);
-const db  = getFirestore(app);
+let app, db;
+try {
+    app = initializeApp(FIREBASE_CONFIG);
+    db  = getFirestore(app);
+    console.log('☁️ Firebase geladen');
+} catch(e) {
+    console.error('☁️ Firebase Init Fehler:', e);
+}
 
-let userEmail  = null;
-let syncActive = false;
-const _origSet = localStorage.setItem.bind(localStorage);
+let userDocId   = null;
+let syncActive  = false;
+const _origSet  = localStorage.setItem.bind(localStorage);
 
-// Wird von auth.js nach dem Login aufgerufen
+// E-Mail → sicherer Firestore-Dokument-Name (kein @ oder .)
+function emailToId(email) {
+    return email.replace(/[@.]/g, '_');
+}
+
 export async function connectToCloud(email) {
-    userEmail = email.replace(/\./g, '_'); // Punkte ersetzen (Firestore mag keine Punkte in IDs)
-    console.log('☁️ Verbinde mit Cloud für:', email);
+    if (!db) { console.error('☁️ Firestore nicht verfügbar'); return; }
+
+    userDocId = emailToId(email);
+    console.log('☁️ Verbinde... DocID:', userDocId);
 
     try {
         const changed = await loadFromCloud();
@@ -43,52 +54,56 @@ export async function connectToCloud(email) {
 
         if (changed && !sessionStorage.getItem('cloud_synced')) {
             sessionStorage.setItem('cloud_synced', '1');
-            console.log('☁️ Neue Daten gefunden – Seite wird neu geladen...');
+            console.log('☁️ Neue Cloud-Daten → Seite lädt neu');
             window.location.reload();
         } else {
-            console.log('☁️ Cloud-Sync aktiv!');
+            console.log('☁️ Cloud-Sync aktiv! Bereit zum Speichern.');
         }
     } catch (e) {
-        console.warn('☁️ Fehler beim Cloud-Connect:', e.message);
+        console.error('☁️ connectToCloud Fehler:', e.code, e.message);
     }
 }
 
-// Daten aus Firestore → localStorage
 async function loadFromCloud() {
-    const snap = await getDoc(doc(db, 'users', userEmail));
+    console.log('☁️ Lese Daten aus Firestore...');
+    const ref  = doc(db, 'users', userDocId);
+    const snap = await getDoc(ref);
+
     if (!snap.exists()) {
-        console.log('☁️ Noch keine Cloud-Daten vorhanden (erster Login)');
+        console.log('☁️ Erster Login – noch keine Cloud-Daten');
         return false;
     }
+
     const data    = snap.data();
     let   changed = false;
     for (const key of SYNC_KEYS) {
         if (data[key] !== undefined && localStorage.getItem(key) !== data[key]) {
             _origSet(key, data[key]);
             changed = true;
+            console.log('☁️ Aus Cloud geladen:', key);
         }
     }
     return changed;
 }
 
-// Auto-Sync: Jede localStorage-Änderung automatisch in Cloud speichern
-let _syncTimers = {};
+let _timers = {};
 function startAutoSync() {
     if (syncActive) return;
     syncActive = true;
+    console.log('☁️ Auto-Sync gestartet');
 
     localStorage.setItem = function(key, value) {
         _origSet(key, value);
-        if (userEmail && SYNC_KEYS.includes(key)) {
-            clearTimeout(_syncTimers[key]);
-            _syncTimers[key] = setTimeout(async () => {
-                try {
-                    await setDoc(doc(db, 'users', userEmail), { [key]: value }, { merge: true });
-                    console.log('☁️ Gespeichert:', key);
-                } catch (e) {
-                    console.warn('☁️ Sync-Fehler:', key, e.message);
-                }
-            }, 1500);
-        }
+        if (!userDocId || !SYNC_KEYS.includes(key)) return;
+
+        clearTimeout(_timers[key]);
+        _timers[key] = setTimeout(async () => {
+            try {
+                await setDoc(doc(db, 'users', userDocId), { [key]: value }, { merge: true });
+                console.log('☁️ In Cloud gespeichert:', key);
+            } catch (e) {
+                console.error('☁️ Speicher-Fehler:', key, e.code, e.message);
+            }
+        }, 1500);
     };
 }

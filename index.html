@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+<html lang="de" data-theme="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="google-signin-client_id"
+        content="1075497087840-c5p8ie2hjqi52ejpjfb0r7fmm2aj24qp.apps.googleusercontent.com">
+    <title>LearnSpace V2.2</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700&display=swap"
+        rel="stylesheet">
+
+    <!-- External Libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/js-confetti@latest/dist/js-confetti.browser.js"></script>
+    <script src="https://accounts.google.com/gsi/client" defer></script>
+    <link rel="stylesheet" href="styles/main.css">
+    <link rel="stylesheet" href="styles/components.css">
+    <link rel="stylesheet" href="styles/v2-components.css">
+    <link rel="stylesheet" href="styles/onboarding.css">
+    <link rel="stylesheet" href="styles/gemini.css">
+</head>
+
+<body>
+
+    <!-- ── Login Screen ──────────────────────────────────────────────────── -->
+    <div id="login-screen" style="
+        display:none; position:fixed; inset:0; z-index:9999;
+        background:linear-gradient(135deg,#0f172a 0%,#1e293b 100%);
+        align-items:center; justify-content:center; flex-direction:column;
+        font-family:'Inter',sans-serif;">
+        <div style="
+            background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1);
+            border-radius:20px; padding:3rem 2.5rem; text-align:center;
+            max-width:380px; width:90%; backdrop-filter:blur(10px);
+            box-shadow:0 25px 50px rgba(0,0,0,0.5);">
+            <div style="font-size:2.8rem; margin-bottom:0.5rem;">📚</div>
+            <h1 style="color:#fff; font-size:1.8rem; font-weight:700; margin:0 0 0.4rem;">LearnSpace</h1>
+            <p style="color:#94a3b8; font-size:0.95rem; margin:0 0 2rem;">Dein persönlicher DHBW Lernbereich</p>
+            <div id="g_id_btn" style="display:flex; justify-content:center;"></div>
+            <p style="color:#64748b; font-size:0.75rem; margin:1.5rem 0 0;">
+                Nur für autorisierte Nutzer
+            </p>
+        </div>
+    </div>
+
+    <div class="app-container">
+        <!-- New Sidebar Navigation -->
+        <nav class="sidebar-nav">
+            <ul>
+                <li><button class="tab-btn active" data-target="dashboard">Dein Tag</button></li>
+                <li><button class="tab-btn" data-target="kanban">Kanban</button></li>
+                <li><button class="tab-btn" data-target="notes">Notizen</button></li>
+                <li><button class="tab-btn" data-target="habits">Habits</button></li>
+                <li><button class="tab-btn" data-target="learning-plan">Lernplan</button></li>
+                <li><button class="tab-btn" data-target="grades">Noten</button></li>
+                <li><button class="tab-btn" data-target="bahn">DB Bahn</button></li>
+                <li><button class="tab-btn" data-target="stats">Statistiken</button></li>
+                <li><button class="tab-btn" data-target="focus">Fokus</button></li>
+                <li style="margin-top: auto;"><button class="tab-btn" data-target="settings">Einstellungen</button></li>
+                <li id="sidebar-user" style="
+                    display:flex; align-items:center; gap:8px;
+                    padding:10px 12px; border-top:1px solid rgba(255,255,255,0.08);
+                    margin-top:8px; min-width:0;"></li>
+            </ul>
+        </nav>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+
+            <!-- Dashboard / Dein Tag Tab -->
+            <section id="dashboard" class="tab-content active">
+                <header class="page-header">
+                    <p class="subtitle">Bereit, heute produktiv zu sein?</p>
+                </header>
+
+                <!-- Status Widgets -->
+                <div class="status-widgets">
+                    <div class="widget">
+                        <span class="widget-label">Aufgaben erledigt</span>
+                        <div class="widget-value"><span id="tasks-done-count">1</span> <span class="muted">/ 4</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Heute zu tun (Tasks & Kalender) -->
+                <div class="today-section">
+                    <div class="section-header">
+                        <h2>Heute zu tun</h2>
+                        <div class="quick-add">
+                            <input type="text" placeholder="Schnelle Aufgabe...">
+                            <button class="add-btn">+</button>
+                        </div>
+                    </div>
+
+                    <div class="today-grid">
+                        <!-- Example Tasks replacing old notes/kanban style for Today -->
+                        <div class="today-card bg-yellow">
+                            <h3>Mathe Kapitel 3</h3>
+                            <p>Übungsblätter 1-5 durchrechnen</p>
+                        </div>
+                        <div class="today-card bg-green">
+                            <h3>Biologie Präsi</h3>
+                            <p>Zellteilung Folien fertigstellen</p>
+                        </div>
+                        <div class="today-card bg-blue">
+                            <h3>Vokabeln lernen</h3>
+                            <p>Lektion 4 Englisch</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Kalender Integration Container -->
+                <div class="calendar-section mt-4">
+                    <h2>Dein Stundenplan</h2>
+                    <div id="calendar-container" class="calendar-timeline">
+                        <p class="loading-text">Kalenderdaten werden geladen...</p>
+                    </div>
+                </div>
+
+            </section>
+
+            <!-- Notes Tab -->
+            <section id="notes" class="tab-content">
+                <header class="page-header" style="display:flex; justify-content:space-between; align-items:center;">
+                    <div>
+                        <h1>Notizen</h1>
+                        <p class="subtitle">Organisiere deine Mitschriften in Ordnern.</p>
+                    </div>
+                    <button class="primary-btn" id="add-note-btn">+ Neue Notiz</button>
+                </header>
+
+                <div style="display:flex; gap:2rem; flex:1; min-height:0;">
+                    <!-- Folders Sidebar -->
+                    <div class="notes-sidebar"
+                        style="width:250px; background:var(--bg-panel); border-right:1px solid var(--border-color); border-radius:12px; padding:1.5rem; display:flex; flex-direction:column; gap:1rem;">
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                            <h3 style="font-size:1rem; margin:0;">Ordner</h3>
+                            <button id="add-folder-btn"
+                                style="background:none; border:none; color:var(--text-muted); cursor:pointer; font-size:1.2rem;">+</button>
+                        </div>
+                        <ul id="folder-list"
+                            style="list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:0.5rem;">
+                            <!-- Folder items rendered here -->
+                        </ul>
+                    </div>
+
+                    <!-- Notes Board -->
+                    <div id="notes-board" class="sticky-board" style="flex:1; overflow-y:auto; align-content:start;">
+                        <!-- Sticky Notes will be rendered here -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- Kanban Tab -->
+            <section id="kanban" class="tab-content">
+                <header class="page-header" style="display:flex; justify-content:space-between; align-items:center;">
+                    <h1>Kanban Board</h1>
+                    <button class="primary-btn" id="add-kanban-task-btn">Neue Aufgabe</button>
+                </header>
+                <div class="kanban-board">
+                    <div class="kanban-column" id="col-todo">
+                        <h2>To Do <span>0</span></h2>
+                        <div class="kanban-dropzone" data-status="todo"></div>
+                    </div>
+                    <div class="kanban-column" id="col-progress">
+                        <h2>In Progress <span>0</span></h2>
+                        <div class="kanban-dropzone" data-status="progress"></div>
+                    </div>
+                    <div class="kanban-column" id="col-done">
+                        <h2>Done <span>0</span></h2>
+                        <div class="kanban-dropzone" data-status="done"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Stats Tab -->
+            <section id="stats" class="tab-content">
+                <header class="page-header">
+                    <h1>Statistiken & Lernziele</h1>
+                </header>
+                <div class="stats-container">
+                    <p>Hier kommen deine Statistiken hin.</p>
+                </div>
+            </section>
+
+            <!-- Habits Tab -->
+            <section id="habits" class="tab-content">
+                <header class="page-header" style="display:flex; justify-content:space-between; align-items:center;">
+                    <div>
+                        <h1>Mission Control: Habits</h1>
+                        <p class="subtitle">Verfolge deine Routinen, verdiene XP und baue Streaks auf.</p>
+                    </div>
+                    <button class="primary-btn" id="add-habit-btn">+ Neue Gewohnheit</button>
+                </header>
+
+                <!-- Habit Tracker Status Leiste (XP, Level, Leben) -->
+                <div class="habit-status-bar"
+                    style="display:flex; gap:2rem; background:var(--bg-panel); padding:1rem 1.5rem; border-radius:12px; border:1px solid var(--border-color); margin-bottom:2rem; align-items:center;">
+                    <div style="display:flex; align-items:center; gap:12px; flex:1;">
+                        <div
+                            style="background:var(--accent-blue); width:48px; height:48px; border-radius:50%; display:flex; justify-content:center; align-items:center; font-weight:bold; font-size:1.2rem; color:white;">
+                            Lvl <span id="habit-level">1</span></div>
+                        <div style="flex:1;">
+                            <div
+                                style="display:flex; justify-content:space-between; margin-bottom:4px; font-size:0.85rem;">
+                                <span style="color:var(--text-muted);">Erfahrung (XP)</span><span id="habit-xp-text">0 /
+                                    100</span>
+                            </div>
+                            <div style="height:8px; background:var(--bg-main); border-radius:4px; overflow:hidden;">
+                                <div id="habit-xp-bar"
+                                    style="height:100%; width:0%; background:linear-gradient(90deg, #3b82f6, #8b5cf6); transition:width 0.3s ease;">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div
+                        style="border-left:1px solid var(--border-color); padding-left:2rem; display:flex; flex-direction:column; gap:4px;">
+                        <span style="color:var(--text-muted); font-size:0.85rem;">Verbleibende Leben (Woche)</span>
+                        <div id="habit-hearts" style="display:flex; gap:8px; font-size:1.5rem;">
+                            <span>❤️</span><span>❤️</span><span>❤️</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="display:grid; grid-template-columns: 2fr 1fr; gap:2rem;">
+
+                    <!-- Left Column: Today's Habits -->
+                    <div>
+                        <div class="section-header"
+                            style="margin-bottom:1rem; display:flex; justify-content:space-between; align-items:center;">
+                            <h2>Heutige Checkliste</h2>
+                            <div style="display:flex; gap:8px;">
+                                <button id="filter-all-habits" class="btn-small active"
+                                    style="padding:4px 8px; border-radius:4px; border:1px solid var(--border-color); background:var(--bg-panel); cursor:pointer;">Alle</button>
+                                <button id="filter-morning-habits" class="btn-small"
+                                    style="padding:4px 8px; border-radius:4px; border:1px solid var(--border-color); background:var(--bg-panel); cursor:pointer;">Morgen</button>
+                                <button id="filter-evening-habits" class="btn-small"
+                                    style="padding:4px 8px; border-radius:4px; border:1px solid var(--border-color); background:var(--bg-panel); cursor:pointer;">Abend</button>
+                            </div>
+                        </div>
+
+                        <div id="habits-today-list" style="display:flex; flex-direction:column; gap:1rem;">
+                            <!-- Habit Cards will be injected here -->
+                            <p style="color:var(--text-muted); text-align:center; padding:2rem;">Lade Gewohnheiten...
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Right Column: Analytics Mini -->
+                    <div style="display:flex; flex-direction:column; gap:1.5rem;">
+                        <div class="analytics-card"
+                            style="background:var(--bg-panel); border-radius:12px; border:1px solid var(--border-color); padding:1.5rem;">
+                            <h3 style="margin-bottom:1rem; font-size:1rem;">Consistency Heatmap</h3>
+                            <div id="habit-heatmap"
+                                style="display:grid; grid-template-columns:repeat(7, 1fr); gap:4px;">
+                                <!-- Heatmap cells injected via JS -->
+                            </div>
+                        </div>
+
+                        <div class="analytics-card"
+                            style="background:var(--bg-panel); border-radius:12px; border:1px solid var(--border-color); padding:1.5rem;">
+                            <h3 style="margin-bottom:1rem; font-size:1rem;">Balance (Radar)</h3>
+                            <div style="position: relative; height: 250px; width: 100%;">
+                                <canvas id="habit-radar-chart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Grades Tab -->
+            <section id="grades" class="tab-content">
+                <header class="page-header" style="display:flex; justify-content:space-between; align-items:center;">
+                    <div>
+                        <h1>Meine Noten (Dualis)</h1>
+                        <p class="subtitle">Automatisch synchronisiert aus dem DHBW CampusNet.</p>
+                    </div>
+                    <button id="sync-grades-btn" class="primary-btn">Noten synchronisieren</button>
+                </header>
+                <div id="grades-container" style="display:flex; flex-direction:column; gap:1.5rem;">
+                    <!-- Grade cards will be injected here -->
+                    <p style="color:var(--text-muted); text-align:center; padding:2rem;">Klicke auf 'Synchronisieren'
+                        oder trage deine Dualis-Daten in den Einstellungen ein.</p>
+                </div>
+            </section>
+
+            <!-- DB Bahn Tab -->
+            <section id="bahn" class="tab-content">
+                <header class="page-header">
+                    <h1>DB Verbindungen</h1>
+                    <p class="subtitle">Live-Zugverbindungen direkt von bahn.de.</p>
+                </header>
+                <div style="display:flex; gap:0.8rem; align-items:center; flex-wrap:wrap; margin-bottom:1.5rem;">
+                    <input id="bahn-origin" type="text" value="Stuttgart Hbf" placeholder="Von"
+                        style="flex:1; min-width:180px; padding:0.6rem 1rem; border-radius:var(--radius-md); border:1px solid var(--border-color); background:var(--bg-panel); color:var(--text-main); font-size:0.95rem;">
+                    <button id="bahn-swap"
+                        style="background:none; border:none; font-size:1.3rem; cursor:pointer; color:var(--text-muted);"
+                        title="Tauschen">⇄</button>
+                    <input id="bahn-destination" type="text" value="Mannheim Hbf" placeholder="Nach"
+                        style="flex:1; min-width:180px; padding:0.6rem 1rem; border-radius:var(--radius-md); border:1px solid var(--border-color); background:var(--bg-panel); color:var(--text-main); font-size:0.95rem;">
+                    <button id="bahn-search-btn" class="primary-btn">Verbindung suchen</button>
+                </div>
+                <div id="bahn-results" style="display:flex; flex-direction:column; gap:0.8rem;">
+                    <p style="color:var(--text-muted); text-align:center; padding:2rem;">Klicke auf 'Verbindung suchen',
+                        um aktuelle ICE-Verbindungen anzuzeigen.</p>
+                </div>
+                <style>
+                    /* Bahn.de-style connection cards */
+                    .bahn-date-header {
+                        font-size: 1.2rem;
+                        color: var(--text-main);
+                        margin-bottom: 0.5rem;
+                    }
+
+                    .bahn-card {
+                        background: var(--bg-panel);
+                        border: 1px solid var(--border-color);
+                        border-radius: 12px;
+                        padding: 0;
+                        overflow: hidden;
+                        transition: box-shadow 0.2s;
+                    }
+
+                    .bahn-card:hover {
+                        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+                    }
+
+                    .bahn-card-main {
+                        display: flex;
+                        align-items: stretch;
+                    }
+
+                    .bahn-card-left {
+                        flex: 1;
+                        padding: 1rem 1.2rem;
+                    }
+
+                    .bahn-card-right {
+                        display: flex;
+                        flex-direction: column;
+                        align-items: center;
+                        justify-content: center;
+                        padding: 1rem 1.5rem;
+                        border-left: 1px solid var(--border-color);
+                        min-width: 120px;
+                    }
+
+                    .bahn-time-row {
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: flex-start;
+                        margin-bottom: 0.25rem;
+                    }
+
+                    .bahn-times-grid {
+                        display: flex;
+                        align-items: flex-start;
+                        color: var(--text-main);
+                    }
+
+                    .bahn-time-col {
+                        display: flex;
+                        flex-direction: column;
+                        line-height: 1.2;
+                        min-width: 48px;
+                    }
+
+                    .bahn-time-separator {
+                        margin: 0 0.4rem;
+                        font-weight: 700;
+                        font-size: 1.05rem;
+                    }
+
+                    .bahn-time-planned {
+                        font-weight: 700;
+                        font-size: 1.05rem;
+                    }
+
+                    .bahn-time-planned.has-delay {
+                        text-decoration: line-through;
+                        color: var(--text-muted);
+                        font-size: 0.9rem;
+                        font-weight: 400;
+                    }
+
+                    .bahn-time-actual {
+                        font-weight: 700;
+                        font-size: 1.05rem;
+                        margin-top: 2px;
+                    }
+
+                    .bahn-time-actual.delayed {
+                        color: #ec0016;
+                    }
+
+                    .bahn-time-actual.ontime {
+                        color: #408335;
+                    }
+
+                    .bahn-time-duration {
+                        font-weight: 400;
+                        color: var(--text-muted);
+                        font-size: 0.95rem;
+                        margin-left: 0.5rem;
+                        margin-top: 0.1rem;
+                    }
+
+                    .bahn-expand-icon {
+                        font-size: 1.2rem;
+                        color: var(--text-muted);
+                        margin-bottom: 0.5rem;
+                    }
+
+                    .bahn-card-details {
+                        border-top: 1px solid var(--border-color);
+                        padding: 1.2rem 1.2rem;
+                        background: rgba(0, 0, 0, 0.15);
+                    }
+
+                    .bahn-station-detail {
+                        font-size: 0.85rem;
+                        color: var(--text-muted);
+                        min-width: 110px;
+                        display: inline-block;
+                    }
+
+                    /* Train bar — same blue as the search button */
+                    .bahn-train-bar {
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        background: var(--accent-blue);
+                        color: #ffffff;
+                        padding: 0.25rem 0.5rem;
+                        border-radius: 4px;
+                        margin-bottom: 0.5rem;
+                        font-size: 0.85rem;
+                        font-weight: 600;
+                        letter-spacing: 0.5px;
+                    }
+
+                    .bahn-train-name {
+                        letter-spacing: 0.5px;
+                    }
+
+                    .bahn-stations {
+                        display: flex;
+                        justify-content: space-between;
+                        font-size: 0.8rem;
+                        color: var(--text-muted);
+                        margin-bottom: 0.4rem;
+                    }
+
+                    /* Platform badges */
+                    .bahn-platforms {
+                        display: flex;
+                        justify-content: space-between;
+                        margin-top: 0.4rem;
+                        gap: 1rem;
+                    }
+
+                    .bahn-platform-item {
+                        display: flex;
+                        align-items: center;
+                        gap: 0.4rem;
+                    }
+
+                    .bahn-gleis-badge {
+                        background: #1a73e8;
+                        color: #fff;
+                        font-size: 0.72rem;
+                        font-weight: 700;
+                        padding: 2px 8px;
+                        border-radius: 4px;
+                        white-space: nowrap;
+                    }
+
+                    .bahn-exit {
+                        font-size: 0.72rem;
+                        color: var(--text-muted);
+                        white-space: nowrap;
+                    }
+
+                    .bahn-exit--links {
+                        color: #1a73e8;
+                    }
+
+                    .bahn-exit--rechts {
+                        color: #1a73e8;
+                    }
+
+                    /* Load indicators */
+                    .bahn-load {
+                        font-size: 0.8rem;
+                        white-space: nowrap;
+                    }
+
+                    .bahn-load--low {
+                        color: #408335;
+                    }
+
+                    .bahn-load--medium {
+                        color: #f59e0b;
+                    }
+
+                    .bahn-load--high {
+                        color: #ec0016;
+                    }
+
+                    /* Warning */
+                    .bahn-warning {
+                        font-size: 0.78rem;
+                        color: #ec0016;
+                        margin-top: 0.4rem;
+                    }
+
+                    /* Price */
+                    .bahn-price-section {
+                        text-align: center;
+                    }
+
+                    .bahn-price-label {
+                        font-size: 0.75rem;
+                        color: var(--text-muted);
+                    }
+
+                    .bahn-price-value {
+                        font-size: 1.3rem;
+                        font-weight: 700;
+                        color: var(--text-main);
+                    }
+
+                    /* Loading state */
+                    .bahn-loading {
+                        text-align: center;
+                        padding: 3rem;
+                        color: var(--text-muted);
+                    }
+
+                    .bahn-loading p {
+                        margin-top: 1rem;
+                    }
+
+                    .bahn-loading small {
+                        opacity: 0.6;
+                    }
+
+                    .bahn-spinner {
+                        width: 40px;
+                        height: 40px;
+                        border: 4px solid var(--border-color);
+                        border-top-color: #ec0016;
+                        border-radius: 50%;
+                        animation: bahn-spin 0.8s linear infinite;
+                        margin: 0 auto;
+                    }
+
+                    @keyframes bahn-spin {
+                        to {
+                            transform: rotate(360deg);
+                        }
+                    }
+
+                    .bahn-error {
+                        color: #ec0016;
+                        text-align: center;
+                        padding: 2rem;
+                    }
+
+                    .bahn-empty {
+                        color: var(--text-muted);
+                        text-align: center;
+                        padding: 2rem;
+                    }
+                </style>
+            </section>
+
+            <!-- Learning Plan Tab -->
+            <section id="learning-plan" class="tab-content">
+                <header class="page-header">
+                    <h1>Mein Lernplan</h1>
+                    <p class="subtitle">Definiere deine Ziele, Klausuren und Wochen-Fokus.</p>
+                </header>
+
+                <div class="learning-plan-container">
+                    <div class="section-header" style="justify-content:space-between; display:flex;">
+                        <h2 style="font-size:1.2rem; margin-bottom:1rem;">Meine Fächer & Klausuren</h2>
+                        <button id="add-course-btn" class="btn-blue-small">+ Fach Hinzufügen</button>
+                    </div>
+                    <div id="course-list" style="display:flex; flex-direction:column; gap:1.5rem;">
+                        <!-- Courses rendered here -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- Settings Tab -->
+            <section id="settings" class="tab-content">
+                <header class="page-header">
+                    <h1>Einstellungen</h1>
+                    <p class="subtitle">Verwalte deine Verknüpfungen und API-Keys.</p>
+                </header>
+
+                <div class="settings-container"
+                    style="max-width: 600px; display: flex; flex-direction: column; gap: 2rem;">
+
+                    <div class="settings-card"
+                        style="background:var(--bg-panel); padding:1.5rem; border-radius:var(--radius-lg); border:1px solid var(--border-color);">
+                        <h3 style="margin-bottom: 1rem; color:var(--text-main);">1. Stundenplan (iCal Link)</h3>
+                        <div class="form-group">
+                            <input type="url" id="setting-ical" placeholder="https://rapla.dhbw.de/..."
+                                style="width:100%; padding:0.8rem; border-radius:4px; background:var(--bg-main); border:1px solid var(--border-color); color:var(--text-main);">
+                            <span class="api-help"
+                                style="display:block; margin-top:0.5rem; color:var(--text-muted); font-size:0.85rem;">Füge
+                                deinen Vorlesungsplan-Link ein, um ihn im Dashboard anzuzeigen.</span>
+                        </div>
+                    </div>
+
+                    <div class="settings-card"
+                        style="background:var(--bg-panel); padding:1.5rem; border-radius:var(--radius-lg); border:1px solid var(--border-color);">
+                        <h3 style="margin-bottom: 1rem; color:var(--text-main);">2. Gemini KI-Assistenz</h3>
+                        <div class="form-group">
+                            <input type="password" id="setting-gemini" placeholder="AIzaSy..."
+                                style="width:100%; padding:0.8rem; border-radius:4px; background:var(--bg-main); border:1px solid var(--border-color); color:var(--text-main);">
+                            <span class="api-help"
+                                style="display:block; margin-top:0.5rem; color:var(--text-muted); font-size:0.85rem;">Wird
+                                lokal gespeichert, um die smarte Tagesplanung nutzen zu können.</span>
+                        </div>
+                    </div>
+
+                    <div class="settings-card"
+                        style="background:var(--bg-panel); padding:1.5rem; border-radius:var(--radius-lg); border:1px solid var(--border-color);">
+                        <h3 style="margin-bottom: 1rem; color:var(--text-main);">3. Dualis Zugang (DHBW)</h3>
+                        <div class="form-group" style="display:flex; flex-direction:column; gap:1rem;">
+                            <div>
+                                <label
+                                    style="font-size:0.85rem; color:var(--text-muted); margin-bottom:4px; display:block;">DHBW
+                                    E-Mail</label>
+                                <input type="email" id="setting-dualis-email"
+                                    placeholder="max.mustermann@lehre.dhbw-stuttgart.de"
+                                    style="width:100%; padding:0.8rem; border-radius:4px; background:var(--bg-main); border:1px solid var(--border-color); color:var(--text-main);">
+                            </div>
+                            <div>
+                                <label
+                                    style="font-size:0.85rem; color:var(--text-muted); margin-bottom:4px; display:block;">DHBW
+                                    Passwort</label>
+                                <input type="password" id="setting-dualis-password" placeholder="Passwort"
+                                    style="width:100%; padding:0.8rem; border-radius:4px; background:var(--bg-main); border:1px solid var(--border-color); color:var(--text-main);">
+                            </div>
+                            <span class="api-help"
+                                style="display:block; margin-top:0.5rem; color:var(--text-muted); font-size:0.85rem;">Deine
+                                Daten werden ausschließlich lokal in deinem Browser gespeichert und für den
+                                automatischen Abruf der Noten genutzt.</span>
+                        </div>
+                    </div>
+
+                    <div class="settings-card"
+                        style="background:var(--bg-panel); padding:1.5rem; border-radius:var(--radius-lg); border:1px solid var(--border-color);">
+                        <h3 style="margin-bottom: 1rem; color:var(--text-main);">4. Google Workspace</h3>
+                        <button class="google-auth-btn" id="setting-google-btn"
+                            style="display:inline-flex; align-items:center; gap:10px; padding:0.8rem 1.5rem; background:white; color:#3c4043; border:none; border-radius:4px; font-weight:500; cursor:pointer;">
+                            <svg width="18" height="18" viewBox="0 0 48 48">
+                                <path fill="#EA4335"
+                                    d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z" />
+                                <path fill="#4285F4"
+                                    d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z" />
+                                <path fill="#FBBC05"
+                                    d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z" />
+                                <path fill="#34A853"
+                                    d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.43-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z" />
+                            </svg>
+                            Mit Google anmelden
+                        </button>
+                        <span class="api-help"
+                            style="display:block; margin-top:0.8rem; color:var(--text-muted); font-size:0.85rem;">Verbindet
+                            Google Kalender und Google Tasks mit der Plattform.</span>
+                    </div>
+
+                    <button id="save-settings-btn" class="primary-btn" style="align-self: flex-start;">Einstellungen
+                        Speichern</button>
+
+                </div>
+            </section>
+
+            <!-- Focus Tab -->
+            <section id="focus" class="tab-content">
+                <header class="page-header">
+                    <h1>Fokus Modus</h1>
+                    <p class="subtitle">Ablenkungsfreies Arbeiten mit dem Tomato (Pomodoro) Timer.</p>
+                </header>
+                <div class="settings-container">
+                    <div id="tomato-timer-container">
+                        <!-- Timer will be injected here by focus.js -->
+                    </div>
+                </div>
+            </section>
+
+
+
+        </main>
+    </div>
+
+    <!-- Global Floating AI Button -->
+    <button id="global-ai-btn" class="global-ai-btn" title="Gemini KI öffnen"
+        style="position:fixed; bottom:30px; right:30px; width:60px; height:60px; border-radius:50%; background:var(--bg-accent); color:white; border:none; box-shadow:0 8px 24px rgba(0,0,0,0.3); cursor:pointer; display:flex; align-items:center; justify-content:center; z-index:9999; font-size:1.8rem; transition:transform 0.2s;">
+        ✨
+    </button>
+
+    <!-- Gemini Popup Container -->
+    <div id="gemini-popup" class="gemini-chat-container">
+        <div class="gemini-header"
+            style="background:var(--bg-sidebar); border-bottom:1px solid var(--border-color); padding:1rem; display:flex; justify-content:space-between; align-items:center;">
+            <div style="display:flex; align-items:center; gap:8px;">
+                <span style="font-size:1.2rem;">✨</span>
+                <span style="font-weight:600;">Gemini Assistent</span>
+            </div>
+            <button id="close-gemini-popup"
+                style="background:none; border:none; color:var(--text-muted); cursor:pointer; font-size:1.2rem; padding:4px;">✕</button>
+        </div>
+        <div id="gemini-messages" class="gemini-messages">
+            <div class="message ai-message">
+                Hallo! Ich bin dein lokaler Gemini Assistent. Frag mich etwas zu deinem Stundenplan, oder
+                sag mir, welche Aufgaben/Notizen ich für dich anlegen soll!
+            </div>
+        </div>
+        <div class="gemini-input-area" style="display:flex; gap:8px; align-items:center;">
+            <input type="text" id="gemini-input" placeholder="Plane meinen Tag..." style="flex:1;">
+            <button id="gemini-mic-btn"
+                style="background:transparent; border:none; font-size:1.4rem; cursor:pointer; color:var(--text-main); padding:0 8px; transition:color 0.2s;"
+                title="Mit Stimme eingeben">🎤</button>
+            <button id="gemini-send-btn" class="primary-btn" style="padding: 0.6rem 1rem;">Senden</button>
+        </div>
+    </div>
+
+    <!-- Onboarding Overlay (Hidden by default, shown by JS if needed) -->
+    <div id="onboarding-overlay" class="onboarding-overlay" style="display: none;">
+        <div class="onboarding-modal">
+            <h1>Willkommen zum LearnSpace V2 🚀</h1>
+            <p>Lass uns deine Lernplattform in wenigen Sekunden für dich personalisieren. Wir verknüpfen deinen
+                Stundenplan und aktivieren den KI-Assistenten.</p>
+
+            <div class="form-group">
+                <label for="ob-ical">1. Dein Stundenplan (iCal Link)</label>
+                <input type="url" id="ob-ical" placeholder="https://rapla.dhbw.de/...">
+                <span class="api-help">Füge deinen Vorlesungsplan-Link ein.</span>
+            </div>
+
+            <div class="form-group mt-4">
+                <label for="ob-gemini">2. KI-Assistenz aktivieren</label>
+                <input type="password" id="ob-gemini" placeholder="AIzaSy...">
+                <span class="api-help">Um die Tagesplanung mit KI nutzen zu können, erstelle kostenlos einen <a
+                        href="https://aistudio.google.com/app/apikey" target="_blank">Gemini API Key</a> und füge ihn
+                    hier ein. Dein Key wird nur lokal auf deinem Gerät gespeichert!</span>
+            </div>
+
+            <div class="form-group mt-4">
+                <label>3. Google Tasks & Kalender verbinden</label>
+                <button class="google-auth-btn" id="ob-google-btn">
+                    <svg width="18" height="18" viewBox="0 0 48 48">
+                        <path fill="#EA4335"
+                            d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z" />
+                        <path fill="#4285F4"
+                            d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z" />
+                        <path fill="#FBBC05"
+                            d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z" />
+                        <path fill="#34A853"
+                            d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.43-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z" />
+                    </svg>
+                    Mit Google anmelden
+                </button>
+            </div>
+
+            <div class="onboarding-footer">
+                <button id="ob-finish-btn" class="primary-btn btn-large">Plattform starten</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ical.js/1.5.0/ical.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/emoji-picker-element@^1/index.js"></script>
+    <!-- Markdown Parser for Gemini Replies -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script type="module" src="js/auth.js"></script>
+    <script type="module" src="js/onboarding.js"></script>
+    <script type="module" src="js/app.js"></script>
+    <script type="module" src="js/settings.js"></script>
+    <script type="module" src="js/dashboard.js"></script>
+    <script type="module" src="js/learning_plan.js"></script>
+    <script type="module" src="js/notes.js"></script>
+    <script type="module" src="js/kanban.js"></script>
+    <script type="module" src="js/calendar.js"></script>
+    <script type="module" src="js/gemini.js"></script>
+    <script type="module" src="js/stats.js"></script>
+    <script type="module" src="js/habits.js"></script>
+    <script type="module" src="js/habit_analytics.js"></script>
+    <script type="module" src="js/focus.js"></script>
+    <script type="module" src="js/grades.js"></script>
+    <script type="module" src="js/bahn.js"></script>
+    <script>
+        // Initialize jsConfetti globally so all modules can use it
+        window.jsConfetti = new JSConfetti();
+    </script>
+</body>
+
+</html>

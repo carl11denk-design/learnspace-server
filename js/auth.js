@@ -60,7 +60,7 @@ async function handleCredential(response) {
     showApp(user);
 
     // Mit Firebase verbinden und Daten aus Cloud laden
-    await connectToCloud(response.credential);
+    await connectToCloud(user.email);
 }
 
 function showApp(user) {
